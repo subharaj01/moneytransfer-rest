@@ -43,32 +43,29 @@ public class AccountsRepositoryInMemory implements AccountsRepository {
 			throws AccountNotExistException, BalanceNotSufficientException {
 		
 		//get meta data from transaction details
-		String accountFrom = userTransaction.getAccountFrom();
-		String accountTo = userTransaction.getAccountTo();
+		String accountFrom = userTransaction.getAccountFromId();
+		String accountTo = userTransaction.getAccountToId();
 		BigDecimal amount = userTransaction.getAmount();
 		
+		//validation for account from which transfer happen
 		if (accounts.get(accountFrom) == null) {
 			throw new AccountNotExistException("account does not exist! account id = "+accountFrom);
 		}
+		//validation for account to which transfer happen
 		if (accounts.get(accountTo) == null) {
 			throw new AccountNotExistException("account does not exist! account id = "+accountTo);
 		}
-		
-		//validation for account from which transfer happen
-		//Account accountFromDetail=accounts.get(accountFrom);
-		
-		//validation for account to which transfer happen
-		//Account accountToDetail=accounts.get(accountTo);
 		
 		NotificationService notificationService = new EmailNotificationService();
 		
 		accounts.computeIfPresent(accountFrom, (K,V) -> 
 		{
 			if (V.getBalance().compareTo(amount) == -1 ) {
-				throw new BalanceNotSufficientException("balance is not sufficient in account id = "+K);
+				throw new BalanceNotSufficientException("balance is no"
+						+ "t sufficient in account id = "+K);
 			}
 			V.setBalance(V.getBalance().subtract(amount));
-			notificationService.notifyAboutTransfer(V,"your account has been debited with amount "+amount);
+			notificationService.notifyAboutTransfer(V,"your account has been debi*ted with amount "+amount);
 			return V;
 		});
 		

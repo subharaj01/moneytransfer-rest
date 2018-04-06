@@ -17,21 +17,21 @@ public class UserTransaction {
 
 	@NotNull
 	@NotEmpty
-	private final String accountFrom;
+	private final String accountFromId;
 
 	@NotNull
 	@NotEmpty
-	private final String accountTo;
+	private final String accountToId;
 
 	@NotNull
 	@Min(value = 0, message = "Requested transaction amount cant be nagative")
 	private BigDecimal amount;
 
 	@JsonCreator
-	public UserTransaction(@JsonProperty("accountFrom") String accountFrom, @JsonProperty("accountTo") String accountTo,
+	public UserTransaction(@JsonProperty("accountFromId") String accountFrom, @JsonProperty("accountToId") String accountTo,
 			@JsonProperty("amount") BigDecimal amount) {
-		this.accountFrom = accountFrom;
-		this.accountTo = accountTo;
+		this.accountFromId = accountFrom;
+		this.accountToId = accountTo;
 		this.amount = amount;
 	}
 }
