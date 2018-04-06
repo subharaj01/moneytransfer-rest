@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
 import com.db.awmd.challenge.domain.Account;
@@ -12,10 +13,12 @@ import com.db.awmd.challenge.exception.AccountNotExistException;
 import com.db.awmd.challenge.exception.BalanceNotSufficientException;
 import com.db.awmd.challenge.exception.DuplicateAccountIdException;
 import com.db.awmd.challenge.service.EmailNotificationService;
-import com.db.awmd.challenge.service.NotificationService;
 
 @Repository
 public class AccountsRepositoryInMemory implements AccountsRepository {
+	
+	@Autowired
+	EmailNotificationService notificationService;
 
 	private final Map<String, Account> accounts = new ConcurrentHashMap<>();
 
@@ -38,6 +41,9 @@ public class AccountsRepositoryInMemory implements AccountsRepository {
 		accounts.clear();
 	}
 
+	/* (non-Javadoc)
+	 * @see com.db.awmd.challenge.repository.AccountsRepository#performTransaction(com.db.awmd.challenge.domain.UserTransaction)
+	 */
 	@Override
 	public void performTransaction(UserTransaction userTransaction)
 			throws AccountNotExistException, BalanceNotSufficientException {
@@ -56,8 +62,7 @@ public class AccountsRepositoryInMemory implements AccountsRepository {
 			throw new AccountNotExistException("account does not exist! account id = "+accountTo);
 		}
 		
-		NotificationService notificationService = new EmailNotificationService();
-		
+		// validate balance is greater or equal to amount and then subtract from account from id  
 		accounts.computeIfPresent(accountFrom, (K,V) -> 
 		{
 			if (V.getBalance().compareTo(amount) == -1 ) {
@@ -65,10 +70,11 @@ public class AccountsRepositoryInMemory implements AccountsRepository {
 						+ "t sufficient in account id = "+K);
 			}
 			V.setBalance(V.getBalance().subtract(amount));
-			notificationService.notifyAboutTransfer(V,"your account has been debi*ted with amount "+amount);
+			notificationService.notifyAboutTransfer(V,"your account has been debited with amount "+amount);
 			return V;
 		});
 		
+		// add amount to account to id
 		accounts.computeIfPresent(accountTo, (K,V) -> 
 		{
 			V.setBalance(V.getBalance().add(amount));

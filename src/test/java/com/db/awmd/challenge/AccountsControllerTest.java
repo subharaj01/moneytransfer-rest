@@ -105,6 +105,13 @@ public class AccountsControllerTest {
 				.andExpect(content().string("{\"accountId\":\"" + uniqueAccountId + "\",\"balance\":123.45}"));
 	}
 
+	// adding test cases for new method transferMoney
+
+	/**
+	 * Negative case: transfer will fail When AccountFromId Does Not Exist
+	 * 
+	 * @throws Exception
+	 */
 	@Test
 	public void transferMoneyWhenAccountFromIdDoesNotExist() throws Exception {
 
@@ -121,6 +128,11 @@ public class AccountsControllerTest {
 
 	}
 
+	/**
+	 * Negative case: transfer will fail When AccountToId Does Not Exist
+	 * 
+	 * @throws Exception
+	 */
 	@Test
 	public void transferMoneyWhenAccountToIdDoesNotExist() throws Exception {
 
@@ -136,6 +148,11 @@ public class AccountsControllerTest {
 				.andExpect(status().isBadRequest());
 	}
 
+	/**
+	 * Negative case: transfer will fail When amount is less than zero
+	 * 
+	 * @throws Exception
+	 */
 	@Test
 	public void transferMoneyWhenAmountNegative() throws Exception {
 
@@ -162,6 +179,41 @@ public class AccountsControllerTest {
 				result.getResolvedException().getMessage().contains("Requested transaction amount cant be nagative"));
 	}
 
+	/**
+	 * Negative case: transfer will fail When amount is greater than balance
+	 * 
+	 * @throws Exception
+	 */
+	@Test
+	public void transferMoneyWhenAmountExceedsBalanceOfAccountFromId() throws Exception {
+		// create account=111 (accuntFromId)
+		this.mockMvc.perform(post("/v1/accounts").contentType(MediaType.APPLICATION_JSON)
+				.content("{\"accountId\":\"111\",\"balance\":1000}")).andExpect(status().isCreated());
+
+		// create account = 123 (accountToId)
+		this.mockMvc.perform(post("/v1/accounts").contentType(MediaType.APPLICATION_JSON)
+				.content("{\"accountId\":\"123\",\"balance\":2000}")).andExpect(status().isCreated());
+
+		// transact 1500 which is more than the balance of account=111
+		this.mockMvc
+				.perform(post("/v1/accounts/transaction").contentType(MediaType.APPLICATION_JSON)
+						.content("{\"accountFromId\":\"111\",\"accountToId\":\"123\",\"amount\":1500}"))
+				.andExpect(status().isBadRequest());
+
+		// verify balance in account = 111 (accountFromId) and it should be 1000
+		this.mockMvc.perform(get("/v1/accounts/" + "111")).andExpect(status().isOk())
+				.andExpect(content().string("{\"accountId\":\"" + "111" + "\",\"balance\":1000}"));
+
+		// verify balance in account = 123 (accountToId) and it should be 2000
+		this.mockMvc.perform(get("/v1/accounts/" + "123")).andExpect(status().isOk())
+				.andExpect(content().string("{\"accountId\":\"" + "123" + "\",\"balance\":2000}"));
+	}
+
+	/**
+	 * Positive case: transfer will succeed When amount is zero
+	 * 
+	 * @throws Exception
+	 */
 	@Test
 	public void transferMoneyWhenAmountZero() throws Exception {
 
@@ -189,6 +241,11 @@ public class AccountsControllerTest {
 				.andExpect(content().string("{\"accountId\":\"" + "123" + "\",\"balance\":2000}"));
 	}
 
+	/**
+	 * Positive case: transfer will succeed When amount is more than zero
+	 * 
+	 * @throws Exception
+	 */
 	@Test
 	public void transferMoneyWhenAmountPositive() throws Exception {
 
@@ -200,8 +257,7 @@ public class AccountsControllerTest {
 		this.mockMvc.perform(post("/v1/accounts").contentType(MediaType.APPLICATION_JSON)
 				.content("{\"accountId\":\"123\",\"balance\":2000}")).andExpect(status().isCreated());
 
-		// transact zero amount which should be considered as good request as
-		// per current implementation
+		// transact 500
 		this.mockMvc
 				.perform(post("/v1/accounts/transaction").contentType(MediaType.APPLICATION_JSON)
 						.content("{\"accountFromId\":\"111\",\"accountToId\":\"123\",\"amount\":500}"))
@@ -216,30 +272,35 @@ public class AccountsControllerTest {
 				.andExpect(content().string("{\"accountId\":\"" + "123" + "\",\"balance\":2500}"));
 	}
 
+	/**
+	 * Positive case: transfer will succeed When amount is equal to balance of
+	 * accountFromId
+	 * 
+	 * @throws Exception
+	 */
 	@Test
-	public void transferMoneyWhenAmountIsGreater() throws Exception {
-		//create account=111 (accuntFromId)
+	public void transferMoneyWhenAmountSameAsBalance() throws Exception {
+
+		// create account = 111 (accountFromId)
 		this.mockMvc.perform(post("/v1/accounts").contentType(MediaType.APPLICATION_JSON)
 				.content("{\"accountId\":\"111\",\"balance\":1000}")).andExpect(status().isCreated());
 
-		
 		// create account = 123 (accountToId)
 		this.mockMvc.perform(post("/v1/accounts").contentType(MediaType.APPLICATION_JSON)
 				.content("{\"accountId\":\"123\",\"balance\":2000}")).andExpect(status().isCreated());
-		
-		// transact zero amount which should be considered as good request as per current implementation
+
+		// transact 500
 		this.mockMvc
 				.perform(post("/v1/accounts/transaction").contentType(MediaType.APPLICATION_JSON)
-						.content("{\"accountFromId\":\"111\",\"accountToId\":\"123\",\"amount\":1500}"))
-				.andExpect(status().isBadRequest());
-		
-		// verify balance in account = 111 (accountFromId) and it should be 1000
-		this.mockMvc.perform(get("/v1/accounts/" + "111")).andExpect(status().isOk())
-		.andExpect(content().string("{\"accountId\":\"" + "111" + "\",\"balance\":1000}"));
-		
-		// verify balance in account = 123 (accountToId) and it should be 2000
-		this.mockMvc.perform(get("/v1/accounts/" + "123")).andExpect(status().isOk())
-		.andExpect(content().string("{\"accountId\":\"" + "123" + "\",\"balance\":2000}"));
-	}
+						.content("{\"accountFromId\":\"111\",\"accountToId\":\"123\",\"amount\":1000}"))
+				.andExpect(status().isOk());
 
+		// verify balance in account = 111 (accountFromId) and it should be 500
+		this.mockMvc.perform(get("/v1/accounts/" + "111")).andExpect(status().isOk())
+				.andExpect(content().string("{\"accountId\":\"" + "111" + "\",\"balance\":0}"));
+
+		// verify balance in account = 123 (accountToId) and it should be 2500
+		this.mockMvc.perform(get("/v1/accounts/" + "123")).andExpect(status().isOk())
+				.andExpect(content().string("{\"accountId\":\"" + "123" + "\",\"balance\":3000}"));
+	}
 }
