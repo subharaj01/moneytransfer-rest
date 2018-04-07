@@ -20,11 +20,16 @@ import com.db.awmd.challenge.exception.BalanceNotSufficientException;
 import com.db.awmd.challenge.exception.DuplicateAccountIdException;
 import com.db.awmd.challenge.service.AccountsService;
 
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiResponse;
+import io.swagger.annotations.ApiResponses;
 import lombok.extern.slf4j.Slf4j;
 
 @RestController
 @RequestMapping("/v1/accounts")
 @Slf4j
+@Api(value = "account-api")
 public class AccountsController {
 
 	private final AccountsService accountsService;
@@ -34,6 +39,7 @@ public class AccountsController {
 		this.accountsService = accountsService;
 	}
 
+	@ApiOperation(value = "Create a new account in case the account id does not exist already", response = ResponseEntity.class)
 	@PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<Object> createAccount(@RequestBody @Valid Account account) {
 		log.info("Creating account {}", account);
@@ -47,12 +53,18 @@ public class AccountsController {
 		return new ResponseEntity<>(HttpStatus.CREATED);
 	}
 
+	@ApiOperation(value = "View account details for an account", response = Account.class)
 	@GetMapping(path = "/{accountId}")
 	public Account getAccount(@PathVariable String accountId) {
 		log.info("Retrieving account for id {}", accountId);
 		return this.accountsService.getAccount(accountId);
 	}
 
+	@ApiOperation(value = "View a list of available products", response = ResponseEntity.class)
+	@ApiResponses(value = { @ApiResponse(code = 200, message = "Successful transaction"),
+			@ApiResponse(code = 401, message = "You are not authorized to view the resource"),
+			@ApiResponse(code = 403, message = "Accessing the resource you were trying to reach is forbidden"),
+			@ApiResponse(code = 404, message = "The resource you were trying to reach is not found") })
 	@PostMapping(path = "/transaction", consumes = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<Object> transferMoney(@RequestBody @Valid UserTransaction userTransaction) {
 		log.info("Transfering money {}", userTransaction);
