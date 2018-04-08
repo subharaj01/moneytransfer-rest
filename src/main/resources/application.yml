@@ -1,2 +1,32 @@
 server:
   port: 18080
+
+# 1->If separate port and address not defined, then server host (here, localhost) / port will be used for management or actuator  
+management:
+    port: 9001
+    address: 127.0.0.1
+# 2->By default, all endpoints except health and info will be restricted, If you want to access all endpoints like metrics, beans, dump, health (full) etc. - then uncomment any of the below
+# management: security: enabled: false 
+# endpoints: sensitive: false
+# 3->If you want to selectively make endpoint non - secure , then do similar to below (below is for beans endpoint)
+# endpoints: beans: sensitive: false
+# 4-> For securing all endpoints + controlling the same , add spring security in dependency and enable security for management and also enable basic security plus user + password for all (including rest) endpoints
+# However, to work with swagger now, swagger urls should be skiped for authentication implementing WebSecurityConfigurerAdapter  
+    security:
+      enabled: true
+      roles: ACTADMIN
+# 5> not mandatory, it will create the actuator endpoints under actuator/ , i.e. actuator/env , actuator/health etc
+    context-path: /actuator
+    
+
+#below will apply for all endpoints including rest , swagger and actuator
+#If we need to apply specific security for them , need to override configure(HttpSecurity http) of WebSecurityConfigurerAdapter
+security:
+  basic:
+    enabled: true       
+  user:
+    name: admin
+    password: admin
+    role: REST_API_ACCESS
+
+    
